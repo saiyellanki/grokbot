@@ -1,0 +1,47 @@
+---
+description: Who Sai is, how he thinks, and how to work with him
+alwaysApply: true
+---
+
+# Sai Yellanki — working context
+
+Saikrishna (Sai) Yellanki (he/him). Austin, TX. Hybrid Cybersecurity Risk Management + AI Risk & Governance + Data Privacy. VP-level risk assurance / technology advisory in a regulated financial-services enterprise. Previously cybersecurity consulting team lead at a global Fortune 500 professional services firm (Toronto). MSc Information Systems Security, Concordia University of Edmonton. IEEE COMPSAC 2016 Geopriv / Wi-Fi positioning privacy paper (DOI 10.1109/COMPSAC.2016.126). CISA, ISO 27001 Lead Auditor. Site: saiyellanki.github.io/sai-agent. GitHub: saiyellanki. LinkedIn: linkedin.com/in/hellosai.
+
+Source of truth for career narrative: `~/Downloads/Sai_Yellanki_Career_Journal.pdf` (confidential complete journal, 2026-09-09). Older "Professional Career Journal" drafts are superseded.
+
+## How he works
+
+- Signature: "I don't audit via compliance checklists — I audit via technical telemetry and automated control configurations."
+- Career arc: built the framework before the market needed it — privacy-by-design (2016), GDPR + cross-jurisdictional meta-framework (2018–2022), hybrid AI risk framework now (NIST AI RMF + EU AI Act + Google Responsible AI).
+- Current public facts: Senior Technical Advisor on an AI Governance Committee; 15+ weekly SaaS AI reviews via a 4-gate protocol (training opt-out / data boundary, tenant isolation, context-aware RBAC, CAEP revocation); MRM assessments; Project Marcus isolated AWS agent sandbox.
+- Adversary-minded: prove the hole with a safe PoC, then ship the fix.
+- Mentors (ISACA Austin). Volunteers (Trace Labs, Thinkery, FMSC, My Possibilities, NASA GLOBE). Globee Cybersecurity Awards judge.
+
+## Public vs confidential (mandatory)
+
+Never use in public materials, repo copy, or unsolicited external drafts:
+
+- Current employer name → "a financial services enterprise" / "the organization"
+- Prior consulting firm name → "a global Fortune 500 professional services firm"
+- "700+ AI agents" → "enterprise AI deployments" / "multiple AI systems in production"
+- "board-approved framework" → "hybrid AI governance framework" / "built and deployed"
+- "SR 11-7" / "OCC 2011-12" → "Model Risk Management (MRM)"
+- "FFIEC-regulated financial institution" → "a regulated enterprise"
+
+Always safe: hybrid framework synthesis, 15+ weekly SaaS AI reviews, IEEE paper, Stuxnet origin, certs by name, unnamed Fortune 500 GDPR + meta-framework, top 1% awareness assessment.
+
+## Builder identity
+
+Home lab (Proxmox, pfSense, Pi-hole, WireGuard, Flipper). Ships personal tools. Prefers Cloudflare Workers + secrets-at-rest over client-side API keys. Local/air-gapped LLM sandboxes for sensitive RAG.
+
+## This repo
+
+`grokbot` tests agent capabilities on cybersecurity risk-management workflows — AI governance reviews, GRC engineering, audit/advisory tooling.
+
+## Working rules
+
+- Do not invent metrics. Prefer named frameworks, telemetry, and controls.
+- Privacy-by-design. No secrets in client code. De-identify proprietary stacks.
+- Precise technical writing. No marketing fluff unless he asks for executive positioning.
+- Career direction: Director/VP AI Risk & Governance, Head of AI Assurance, BISO, Director of Technology Risk, Big Four AI risk principal. Next creds: IAPP AIGP, ISO 42001 LA.
+- Offensive techniques only in authorized lab, audit, or defensive-hardening context.
