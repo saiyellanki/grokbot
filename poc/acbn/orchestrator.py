@@ -9,7 +9,10 @@ from typing import Any
 
 from . import bots
 from .discovery import discover, inventory_integrity
+from .exception_aging import age_exceptions
+from .hitl_tokens import DualControlBroker, issue_token
 from .loader import load_all
+from .soc_use_cases import attest_library
 from .vault import Vault
 
 HITL_REASONS_ALWAYS = (
@@ -19,6 +22,17 @@ HITL_REASONS_ALWAYS = (
     "ofac_hit",
     "kev",
     "mapping_draft",
+)
+
+REQUIRED_VAULT_FIELDS = (
+    "policy_version",
+    "collector_id",
+    "control_ids",
+    "controls",
+    "env",
+    "line",
+    "prev_event_hash",
+    "event_hash",
 )
 
 
@@ -95,12 +109,16 @@ def kpis(
     cct: dict[str, Any],
     sampler: dict[str, Any],
     hitl: list[dict[str, Any]],
+    aging: dict[str, Any] | None = None,
+    soc: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     in_scope = [r for r in cct.get("results", []) if r.get("outcome") != "not_tested_by_2lod"]
     complete = [r for r in in_scope if r["outcome"] in ("pass", "fail")]
     n = len(in_scope) or 1
     sample = sampler.get("workpapers") or []
     exceptions = sampler.get("observations") or []
+    aging = aging or {}
+    soc_kpis = (soc or {}).get("kpis") or {}
     return {
         "synthetic": True,
         "disclaimer": "Computed from Ridgeline Demo Bank fixtures. Not production measurements.",
@@ -119,17 +137,66 @@ def kpis(
         "independence_delta": round(len(exceptions) / (len(sample) or 1), 4),
         "unauthorized_prod_mutations": 0,
         "discovered_assets": len(assets),
+        "exception_breached": (aging.get("counts") or {}).get("breached", 0),
+        "exception_aging": (aging.get("counts") or {}).get("aging", 0),
+        "soc_collector_coverage": soc_kpis.get("collector_coverage"),
+        "soc_detection_attested_rate": soc_kpis.get("detection_attested_rate"),
+        "soc_collectors_are_not_detections": soc_kpis.get("collectors_are_not_detections", True),
     }
+
+
+def _put(vault: Vault, *, bot_id: str, line: str, task_id: str, payload: dict[str, Any], controls: list[str]) -> dict[str, Any]:
+    return vault.put(
+        bot_id=bot_id,
+        collector_id=bot_id,
+        line=line,
+        task_id=task_id,
+        payload=payload,
+        controls=controls,
+        control_ids=controls,
+    )
+
+
+def _demo_hitl_token() -> dict[str, Any]:
+    token = issue_token(
+        approver_id="jordan.hale@ridgeline-demo.example",
+        sod_peer_id="priya.nair@ridgeline-demo.example",
+        expires_at="2026-09-10T23:59:59Z",
+        bound_task_id="task-iam-001",
+        action="apply_revocation_diff",
+        asset_or_principal="arn:aws:iam::111122223333:user/contractor-lee",
+        token_id="tok-task-iam-001-contractor-lee",
+    )
+    broker = DualControlBroker()
+    return broker.demo_reuse_guard(
+        token,
+        bound_ok_task="task-iam-001",
+        reuse_task="task-cis-001",
+        now="2026-09-10T12:00:00Z",
+    )
+
+
+def _assert_vault_schema(vault: Vault) -> None:
+    for event in vault.chain:
+        missing = [f for f in REQUIRED_VAULT_FIELDS if f not in event]
+        if missing:
+            raise RuntimeError(f"vault event {event.get('event_id')} missing {missing}")
+        if event["control_ids"] != event["controls"]:
+            raise RuntimeError("control_ids must alias controls")
+        if event["collector_id"] != event["bot_id"]:
+            raise RuntimeError("collector_id must equal bot_id unless explicitly overridden")
 
 
 def run(out_dir: Path) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     data = load_all()
-    vault = Vault(out_dir / "vault")
+    policy_version = data["ccf"].get("version") or "ccf-2026.09.1"
+    vault = Vault(out_dir / "vault", policy_version=policy_version, env="prod/synthetic")
     assets = discover(data["cmdb"], data["inventory"])
     integrity = inventory_integrity(assets)
 
-    disc_rec = vault.put(
+    disc_rec = _put(
+        vault,
         bot_id="discovery",
         line="1LOD",
         task_id="task-disc-001",
@@ -138,19 +205,26 @@ def run(out_dir: Path) -> dict[str, Any]:
     )
 
     cis = bots.cis_drift_sentinel(data["cis"], assets)
-    vault.put(bot_id="cis-drift-sentinel", line="1LOD", task_id="task-cis-001", payload=cis, controls=["CCF-CM-002"])
+    _put(vault, bot_id="cis-drift-sentinel", line="1LOD", task_id="task-cis-001", payload=cis, controls=["CCF-CM-002"])
 
     iam = bots.iam_entitlement_auditor(data["iam"])
-    vault.put(bot_id="iam-entitlement-auditor", line="1LOD", task_id="task-iam-001", payload=iam, controls=["CCF-AC-001", "CCF-AC-006"])
+    _put(
+        vault,
+        bot_id="iam-entitlement-auditor",
+        line="1LOD",
+        task_id="task-iam-001",
+        payload=iam,
+        controls=["CCF-AC-001", "CCF-AC-006"],
+    )
 
     patch = bots.patch_verify_bot(data["vulns"], assets)
-    vault.put(bot_id="patch-verify-bot", line="1LOD", task_id="task-patch-001", payload=patch, controls=["CCF-SI-002"])
+    _put(vault, bot_id="patch-verify-bot", line="1LOD", task_id="task-patch-001", payload=patch, controls=["CCF-SI-002"])
 
     ofac = bots.ofac_sanctions_screener(data["vendors"], data["sdn"])
-    vault.put(bot_id="ofac-sanctions-screener", line="2LOD", task_id="task-ofac-001", payload=ofac, controls=["CCF-SA-001"])
+    _put(vault, bot_id="ofac-sanctions-screener", line="2LOD", task_id="task-ofac-001", payload=ofac, controls=["CCF-SA-001"])
 
     reg = bots.reg_change_mapper(data["reg_feed"], data["ccf"])
-    vault.put(bot_id="reg-change-mapper", line="2LOD", task_id="task-reg-001", payload=reg, controls=["CCF-RM-001"])
+    _put(vault, bot_id="reg-change-mapper", line="2LOD", task_id="task-reg-001", payload=reg, controls=["CCF-RM-001"])
 
     payloads = {
         "discovery": disc_rec["payload"],
@@ -162,11 +236,35 @@ def run(out_dir: Path) -> dict[str, Any]:
     }
 
     cct = bots.cct_evidence_harvester(data["ccf"], payloads, integrity)
-    vault.put(bot_id="cct-evidence-harvester", line="2LOD", task_id="task-cct-001", payload=cct, controls=["CCF-AC-001"])
+    _put(vault, bot_id="cct-evidence-harvester", line="2LOD", task_id="task-cct-001", payload=cct, controls=["CCF-AC-001"])
+
+    aging = age_exceptions(data["exceptions"])
+    _put(
+        vault,
+        bot_id="exception-aging",
+        line="2LOD",
+        task_id="task-exc-001",
+        payload={"counts": aging["counts"], "tickets": aging["tickets"]},
+        controls=sorted({t["control_id"] for t in aging["tickets"] if t.get("control_id")}),
+    )
+
+    available = {p.get("bot_id") for p in payloads.values() if isinstance(p, dict) and p.get("bot_id")}
+    available.add("discovery")
+    available.add("patch-verify-bot")
+    soc = attest_library(data["soc_use_cases"], available_collectors=available)
+    _put(
+        vault,
+        bot_id="soc-use-case-attestor",
+        line="2LOD",
+        task_id="task-soc-001",
+        payload={"kpis": soc["kpis"], "use_cases": soc["use_cases"]},
+        controls=["CCF-SI-002", "CCF-AU-003"],
+    )
 
     chain_ok = vault.verify_chain()
     sampler = bots.independent_sampler(payloads, cct, chain_ok)
-    vault.put(
+    _put(
+        vault,
         bot_id="independent-sampler",
         line="3LOD",
         task_id="task-audit-001",
@@ -175,6 +273,7 @@ def run(out_dir: Path) -> dict[str, Any]:
     )
     chain_ok = vault.verify_chain()
     sampler["chain_ok"] = chain_ok
+    _assert_vault_schema(vault)
 
     if sampler.get("remediation_attempted"):
         raise RuntimeError("3LoD independence violated")
@@ -188,9 +287,14 @@ def run(out_dir: Path) -> dict[str, Any]:
         ("reg-change-mapper", reg),
     ):
         hitl.extend(_hitl_items(bot_id, payload, assets))
+    hitl.extend(aging.get("hitl_items") or [])
+
+    token_demo = _demo_hitl_token()
+    if token_demo.get("reuse_across_tasks", {}).get("ok"):
+        raise RuntimeError("dual-control broker accepted a reused token")
 
     vault.flush_manifest()
-    metrics = kpis(assets, integrity, cct, sampler, hitl)
+    metrics = kpis(assets, integrity, cct, sampler, hitl, aging=aging, soc=soc)
 
     irm = {
         "synthetic": True,
@@ -210,8 +314,11 @@ def run(out_dir: Path) -> dict[str, Any]:
     (out_dir / "assets.json").write_text(json.dumps({"synthetic": True, "assets": assets, "integrity": integrity}, indent=2), encoding="utf-8")
     (out_dir / "kpis.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     (out_dir / "3lod_sample.json").write_text(json.dumps(sampler, indent=2), encoding="utf-8")
+    (out_dir / "exception_aging.json").write_text(json.dumps(aging, indent=2), encoding="utf-8")
+    (out_dir / "soc_use_case_attestation.json").write_text(json.dumps(soc, indent=2), encoding="utf-8")
+    (out_dir / "hitl_tokens.json").write_text(json.dumps(token_demo, indent=2), encoding="utf-8")
 
-    pack = examiner_pack(data["org"], metrics, sampler, chain_ok)
+    pack = examiner_pack(data["org"], metrics, sampler, chain_ok, aging=aging, soc=soc)
     (out_dir / "examiner_pack.md").write_text(pack, encoding="utf-8")
 
     summary = {
@@ -220,6 +327,9 @@ def run(out_dir: Path) -> dict[str, Any]:
         "chain_ok": chain_ok,
         "kpis": metrics,
         "hitl_count": len(hitl),
+        "exception_hitl": (aging.get("counts") or {}).get("hitl_queued", 0),
+        "soc_detection_attested_rate": metrics.get("soc_detection_attested_rate"),
+        "token_reuse_rejected": not token_demo.get("reuse_across_tasks", {}).get("ok", True),
         "out_dir": str(out_dir),
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
@@ -227,8 +337,17 @@ def run(out_dir: Path) -> dict[str, Any]:
     return summary
 
 
-def examiner_pack(org: dict[str, Any], metrics: dict[str, Any], sampler: dict[str, Any], chain_ok: bool) -> str:
+def examiner_pack(
+    org: dict[str, Any],
+    metrics: dict[str, Any],
+    sampler: dict[str, Any],
+    chain_ok: bool,
+    aging: dict[str, Any] | None = None,
+    soc: dict[str, Any] | None = None,
+) -> str:
     obs = sampler.get("observations") or []
+    aging = aging or {}
+    soc = soc or {}
     lines = [
         f"# Examiner pack — {org['legal_name']}",
         "",
@@ -243,6 +362,8 @@ def examiner_pack(org: dict[str, Any], metrics: dict[str, Any], sampler: dict[st
         f"- Audit-readiness (controls with pass/fail, excl. 3LoD-only): {metrics['audit_readiness_coverage']}",
         f"- Inconclusive rate: {metrics['inconclusive_rate']}",
         f"- HITL queued (blocked mutations): {metrics['hitl_queued']}",
+        f"- Exception breached / aging: {metrics.get('exception_breached')} / {metrics.get('exception_aging')}",
+        f"- SOC collector coverage / detection attested: {metrics.get('soc_collector_coverage')} / {metrics.get('soc_detection_attested_rate')}",
         f"- 3LoD independence delta: {metrics['independence_delta']}",
         "",
         "## 3LoD sample (seed 20260909)",
@@ -260,10 +381,39 @@ def examiner_pack(org: dict[str, Any], metrics: dict[str, Any], sampler: dict[st
             lines.append(f"- {o}")
     lines += [
         "",
+        "## Exception aging",
+        "",
+    ]
+    for t in aging.get("tickets") or []:
+        lines.append(
+            f"- `{t['exception_id']}` {t.get('control_id')} {t['aging_status']} days_to_expiry={t['days_to_expiry']}"
+        )
+    if not aging.get("tickets"):
+        lines.append("- No exception fixtures loaded.")
+    lines += [
+        "",
+        "## SOC use-case attestation (privilege-host KEV)",
+        "",
+        "Collectors ≠ detection. A KEV inventory finding is not an exploit or lateral-movement use-case.",
+        "",
+    ]
+    for uc in soc.get("use_cases") or []:
+        lines.append(
+            f"- `{uc['use_case_id']}` {uc.get('phase')} attestation={uc.get('detection_attestation')} "
+            f"mitre={','.join(uc.get('mitre') or [])}"
+        )
+    lines += [
+        "",
         "## Independence statement",
         "",
         "The independent sampler used vault hashes only. It did not invoke 1LoD collectors",
-        "or the action broker. LLM mapping drafts remain unattested.",
+        "or the action broker. LLM mapping drafts remain unattested. Dual-control tokens are",
+        "bound to a single task_id; the PoC broker rejects reuse across tasks.",
+        "",
+        "## Redaction",
+        "",
+        "Vault payloads are walked for NPI/CHD key patterns and redacted before `inputs_hash`.",
+        "Fixtures do not contain real customer data.",
         "",
     ]
     return "\n".join(lines) + "\n"

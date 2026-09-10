@@ -1,0 +1,55 @@
+{
+  "synthetic": true,
+  "disclaimer": "Fictitious risk-accept tickets for Ridgeline Demo Bank. Not production exceptions.",
+  "as_of": "2026-09-10T00:00:00Z",
+  "exceptions": [
+    {
+      "exception_id": "EXC-001",
+      "type": "risk_accept",
+      "control_id": "CCF-SI-002",
+      "status": "accepted",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "reviewer": "priya.nair@ridgeline-demo.example",
+      "asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "opened_at": "2026-06-15T00:00:00Z",
+      "expires_at": "2026-08-15T00:00:00Z",
+      "rationale": "SYNTHETIC: jump-host KEV compensating control pending vendor change window."
+    },
+    {
+      "exception_id": "EXC-002",
+      "type": "risk_accept",
+      "control_id": "CCF-AC-006",
+      "status": "accepted",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "reviewer": "priya.nair@ridgeline-demo.example",
+      "asset_id": "arn:aws:iam::111122223333:user/jhale-admin",
+      "opened_at": "2026-08-20T00:00:00Z",
+      "expires_at": "2026-09-18T00:00:00Z",
+      "rationale": "SYNTHETIC: standing admin SoD clash accepted through next recert cycle."
+    },
+    {
+      "exception_id": "EXC-003",
+      "type": "compensating_control",
+      "control_id": "CCF-CM-002",
+      "status": "open",
+      "owner": "priya.nair@ridgeline-demo.example",
+      "reviewer": "dana.okonkwo@ridgeline-demo.example",
+      "asset_id": "snowflake://RHDEMO/ANALYTICS",
+      "opened_at": "2026-07-01T00:00:00Z",
+      "expires_at": "2027-01-01T00:00:00Z",
+      "rationale": "SYNTHETIC: Snowflake network policy compensating control — current."
+    },
+    {
+      "exception_id": "EXC-004",
+      "type": "risk_accept",
+      "control_id": "CCF-AM-001",
+      "status": "accepted",
+      "owner": "security-ops-queue@ridgeline-demo.example",
+      "reviewer": "priya.nair@ridgeline-demo.example",
+      "asset_id": "okta:app:quicknote-ai",
+      "opened_at": "2026-07-10T00:00:00Z",
+      "expires_at": "2026-09-01T00:00:00Z",
+      "rationale": "SYNTHETIC: shadow SaaS pending TPRM onboarding — expired."
+    }
+  ]
+}

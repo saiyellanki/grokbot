@@ -13,6 +13,15 @@ sys.path.insert(0, str(ROOT))
 from acbn.orchestrator import run  # noqa: E402
 
 
+REQUIRED_ARTEFACTS = (
+    "exception_aging.json",
+    "soc_use_case_attestation.json",
+    "hitl_tokens.json",
+    "vault/chain.json",
+    "kpis.json",
+)
+
+
 def main() -> int:
     out = ROOT / "out"
     summary = run(out)
@@ -23,6 +32,13 @@ def main() -> int:
     if summary["kpis"]["unauthorized_prod_mutations"] != 0:
         print("FAIL: unauthorized mutations", file=sys.stderr)
         return 1
+    if not summary.get("token_reuse_rejected"):
+        print("FAIL: dual-control token reuse was not rejected", file=sys.stderr)
+        return 1
+    for name in REQUIRED_ARTEFACTS:
+        if not (out / name).exists():
+            print(f"FAIL: missing artefact {name}", file=sys.stderr)
+            return 1
     print("\nPoC OK — artefacts in", out, file=sys.stderr)
     return 0
 

@@ -97,19 +97,23 @@ Every bot task emits a canonical event to an append-only log (CloudTrail-equival
   "event_id": "01JQR7K3N8M2",
   "ts": "2026-09-09T23:00:00Z",
   "bot_id": "iam-entitlement-auditor",
+  "collector_id": "iam-entitlement-auditor",
   "line": "1LOD",
   "task_id": "task-8841",
   "actor_principal": "arn:aws:iam::222233334444:role/acbn-iam-auditor",
   "trigger": { "type": "cron", "cron": "0 6 * * 1" },
   "inputs_hash": "sha256:9f2c...",
   "policy_version": "ccf-2026.09.1",
+  "controls": ["CCF-AC-001", "CCF-AC-006"],
+  "control_ids": ["CCF-AC-001", "CCF-AC-006"],
+  "env": "prod/synthetic",
   "decision": "HITL_REQUIRED",
   "outputs": ["vault://evidence/8841/iam-recert.json"],
   "prev_event_hash": "sha256:41aa..."
 }
 ```
 
-Hash-chain `prev_event_hash` so 3LoD can detect truncation. Logs are SIEM-forwarded (immutable index) and retained to the stricter of SOX, GLBA, PCI DSS 12.10.1, or examiner request.
+Hash-chain `prev_event_hash` so 3LoD can detect truncation. `event_hash` is the digest of the event **excluding** `event_hash` itself. Logs are SIEM-forwarded (immutable index) and retained to the stricter of SOX, GLBA, PCI DSS 12.10.1, or examiner request. Vault payloads must not contain unredacted NPI/CHD.
 
 ### 1.4 HITL gates (high-impact actions)
 
@@ -122,7 +126,7 @@ HITL is mandatory when any of the following is true:
 5. LLM mapping confidence `< 0.70` (mapping may proceed as *draft*; cannot auto-close a gap).
 6. Blast radius `> N` identities or `> 1` production account.
 
-Approval token schema: `approver_id`, `sod_peer_id` (for dual control), `expires_at`, `bound_task_id`. The broker rejects tokens reused across tasks.
+Approval token schema: `approver_id`, `sod_peer_id` (for dual control), `expires_at`, `bound_task_id`, `action`, `asset_or_principal`. The broker rejects tokens reused across tasks.
 
 ### 1.5 Persona map (operations)
 
