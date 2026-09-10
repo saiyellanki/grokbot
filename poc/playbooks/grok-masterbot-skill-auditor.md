@@ -229,7 +229,7 @@ notes:
 
 | Target | Kind | Notes |
 | --- | --- | --- |
-| `cis-drift-sentinel` | 1LoD Python | Config drift vs CIS; unregistered stay in population |
+| `cis-drift-sentinel` | 1LoD Python | Config drift vs CIS; unregistered stay in population; no-snapshot = coverage_gap |
 | `iam-entitlement-auditor` | 1LoD Python | Orphans, standing admin, SoD; no auto-delete |
 | `patch-verify-bot` | 1LoD Python | KEV join; no-agent = coverage gap |
 | `reg-change-mapper` | 2LoD Python | Draft maps only; 2LoD attests |

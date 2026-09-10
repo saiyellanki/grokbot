@@ -34,4 +34,5 @@ def load_all() -> dict[str, Any]:
         "tasks": load("tasks.json"),
         "exceptions": load("exceptions.json"),
         "soc_use_cases": load("soc_use_cases.json"),
+        "soc_attestation_evidence": load("soc_attestation_evidence.json"),
     }

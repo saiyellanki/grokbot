@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic SOC attestation evidence only. Not live SIEM / EDR hits. apply=false rows document the happy path without changing the default PoC gap run.",
+  "as_of": "2026-09-10T00:00:00Z",
+  "happy_path_note": "To demo one attested privilege_host_jump use case, set apply=true on EVD-JUMP-EXAMPLE. Default PoC leaves attested_count=0 so CCF-SI-002 cannot pass.",
+  "evidence": [
+    {
+      "evidence_id": "EVD-JUMP-EXAMPLE",
+      "use_case_id": "UC-JUMP-KEV-01",
+      "apply": false,
+      "attestation": "attested",
+      "rule_id": "det-jump-exploit-synth-example",
+      "source": "synthetic_fixture",
+      "notes": "EXAMPLE ONLY — not applied. Would mark exploit-phase detection attested from a fixture, not a live SIEM hit."
+    }
+  ]
+}

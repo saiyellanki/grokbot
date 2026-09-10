@@ -17,6 +17,7 @@ from acbn.redaction import REDACTED, deny_unredacted, redact_payload  # noqa: E4
 REQUIRED_ARTEFACTS = (
     "exception_aging.json",
     "soc_use_case_attestation.json",
+    "cis_drift.json",
     "hitl_tokens.json",
     "vault/chain.json",
     "kpis.json",
@@ -67,6 +68,54 @@ def main() -> int:
         missing = [f for f in REQUIRED_EVENT_FIELDS if f not in event]
         if missing:
             return _fail(f"{event.get('event_id')} missing {missing}")
+
+    cis = json.loads((out / "cis_drift.json").read_text(encoding="utf-8"))
+    if cis.get("skipped_unregistered") != 0:
+        return _fail("cis skipped_unregistered must stay 0")
+    if cis.get("remediation_attempted"):
+        return _fail("cis remediation_attempted must be false")
+    unreg_tested = [
+        f
+        for f in cis.get("findings") or []
+        if f.get("registration_state") != "registered" and f.get("status") != "coverage_gap"
+    ]
+    if not unreg_tested:
+        return _fail("unregistered assets with snapshots must remain in the CIS test population")
+    gaps = {f["asset_id"]: f for f in cis.get("findings") or [] if f.get("status") == "coverage_gap"}
+    shadow = gaps.get("okta:app:quicknote-ai")
+    if not shadow or shadow.get("registration_state") != "shadow":
+        return _fail("okta:app:quicknote-ai must be coverage_gap with registration_state=shadow")
+    for aid in ("salesforce:00DDEMO0000001", "q2:tenant-rhb-demo", "fiserv:dna-rhb-demo"):
+        if aid not in gaps:
+            return _fail(f"{aid} must appear as CIS coverage_gap")
+
+    soc = json.loads((out / "soc_use_case_attestation.json").read_text(encoding="utf-8"))
+    soc_kpis = soc.get("kpis") or {}
+    ph = soc_kpis.get("privilege_host_jump") or {}
+    attested = int(ph.get("attested_count") or 0)
+    ratio = soc_kpis.get("soc_use_case_coverage_ratio")
+    if ratio != soc_kpis.get("detection_attested_rate"):
+        return _fail("soc_use_case_coverage_ratio must come from the attestation artefact")
+    if summary["kpis"].get("soc_use_case_coverage_ratio") != ratio:
+        return _fail("kpis.soc_use_case_coverage_ratio must match attestation artefact")
+
+    irm = json.loads((out / "irm.json").read_text(encoding="utf-8"))
+    si002 = next((r for r in (irm.get("cct") or {}).get("results") or [] if r.get("ccf_id") == "CCF-SI-002"), None)
+    if si002 is None:
+        return _fail("CCT missing CCF-SI-002")
+    if attested == 0 and si002.get("outcome") == "pass":
+        return _fail("CCF-SI-002 cannot pass while privilege_host_jump attested_count==0")
+    if attested == 0 and "soc_use_case_gaps" not in (si002.get("reason") or "") and "privilege_host_jump_unattested" not in (
+        si002.get("reason") or ""
+    ):
+        return _fail("CCF-SI-002 reason must point at privilege_host_jump / soc use-case gaps")
+
+    sampler = json.loads((out / "3lod_sample.json").read_text(encoding="utf-8"))
+    if sampler.get("remediation_attempted"):
+        return _fail("3LoD remediation_attempted must be false")
+    si002_3 = next((w for w in sampler.get("workpapers") or [] if w.get("ccf_id") == "CCF-SI-002"), None)
+    if si002_3 and si002_3.get("3lod_reperform") == "pass" and attested == 0:
+        return _fail("3LoD SI-002 re-perform cannot be pass while privilege_host_jump attested_count==0")
 
     print("\nPoC OK — artefacts in", out, file=sys.stderr)
     return 0

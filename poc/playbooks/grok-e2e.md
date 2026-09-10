@@ -20,7 +20,8 @@ Prove the bot mesh end-to-end: discovery → 1LoD telemetry bots → 2LoD CCT/OF
 ## Pass criteria
 
 - Vault `chain_ok` is true; `event_hash` excludes itself; `prev_event_hash` walks
-- Unregistered / shadow assets appear in CIS and inventory tests
+- Unregistered / shadow assets appear in CIS and inventory tests; snapshot-less assets are `coverage_gap` (including shadow `okta:app:quicknote-ai`)
+- `CCF-SI-002` is not `pass` while privilege_host_jump `attested_count==0`
 - OFAC synthetic hit is HITL-blocked
 - Aged / breached exceptions appear on the HITL queue
 - SOC library scores collector coverage separately from detection attestation

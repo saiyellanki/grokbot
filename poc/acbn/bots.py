@@ -4,36 +4,146 @@ from __future__ import annotations
 
 from typing import Any
 
+PRIVILEGE_HOST_JUMP = "privilege_host_jump"
+
 
 def _asset_map(assets: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {a["asset_id"]: a for a in assets}
 
 
+def privilege_host_jump_attested_count(soc: dict[str, Any] | None) -> int:
+    if not soc:
+        return 0
+    kpis = soc.get("kpis") or {}
+    ph = kpis.get("privilege_host_jump") or {}
+    if "attested_count" in ph:
+        return int(ph["attested_count"])
+    return sum(
+        1
+        for uc in soc.get("use_cases") or []
+        if uc.get("asset_class") == PRIVILEGE_HOST_JUMP
+        and uc.get("detection_attestation") == "attested"
+    )
+
+
+def si002_has_open_exception(aging: dict[str, Any] | None) -> bool:
+    """Current or aging (not breached) CCF-SI-002 exception. Expired tickets do not cover."""
+    if not aging:
+        return False
+    for ticket in aging.get("tickets") or []:
+        if ticket.get("control_id") != "CCF-SI-002":
+            continue
+        if ticket.get("aging_status") in ("current", "aging"):
+            return True
+    return False
+
+
+def conclude_si002(
+    patch: dict[str, Any],
+    soc: dict[str, Any] | None = None,
+    aging: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """SI-002 cannot pass while privilege_host_jump detections are unattested.
+
+    A current/aging exception yields inconclusive (not pass). Breached exceptions
+    do not cover. Collector kev_open / coverage_gaps remain fail. No live SIEM hits.
+    """
+    kev_open = int(patch.get("kev_open") or 0)
+    patch_gaps = int(patch.get("coverage_gaps") or 0)
+    attested = privilege_host_jump_attested_count(soc)
+    has_exc = si002_has_open_exception(aging)
+    reasons: list[str] = []
+    if kev_open:
+        reasons.append("kev_open")
+    if patch_gaps:
+        reasons.append("patch_coverage_gaps")
+    if attested == 0:
+        reasons.append("privilege_host_jump_unattested")
+        reasons.append("soc_use_case_gaps")
+    if kev_open or patch_gaps:
+        return {"outcome": "fail", "reason": ",".join(reasons), "attested_count": attested}
+    if attested == 0:
+        if has_exc:
+            return {
+                "outcome": "inconclusive",
+                "reason": "privilege_host_jump_unattested_exception_recorded",
+                "attested_count": attested,
+            }
+        return {
+            "outcome": "fail",
+            "reason": "privilege_host_jump_unattested,soc_use_case_gaps",
+            "attested_count": attested,
+        }
+    return {"outcome": "pass", "reason": "ok", "attested_count": attested}
+
+
 def cis_drift_sentinel(cis: dict[str, Any], assets: list[dict[str, Any]]) -> dict[str, Any]:
+    """Outer-join discovered inventory to CIS snapshots.
+
+    Assets with snapshots stay in the tested population even when unregistered.
+    Discovered assets without a snapshot become explicit coverage_gap rows —
+    they are not omitted from the denominator.
+    """
     amap = _asset_map(assets)
-    findings = []
+    findings: list[dict[str, Any]] = []
+    snap_asset_ids: set[str] = set()
     for snap in cis.get("snapshots", []):
         asset = amap.get(snap["asset_id"], {})
+        snap_asset_ids.add(snap["asset_id"])
+        passed = bool(snap["pass"])
         findings.append(
             {
                 "rule_id": snap["rule_id"],
                 "asset_id": snap["asset_id"],
-                "pass": snap["pass"],
-                "severity": snap.get("severity") or ("info" if snap["pass"] else "medium"),
+                "pass": passed,
+                "outcome": "pass" if passed else "fail",
+                "status": "pass" if passed else "fail",
+                "severity": snap.get("severity") or ("info" if passed else "medium"),
                 "expected": snap["expected"],
                 "observed": snap["observed"],
                 "registration_state": asset.get("registration_state", "unregistered"),
                 "mutate_allowed": asset.get("mutate_allowed", False),
+                "remediation_attempted": False,
             }
         )
-    failed = [f for f in findings if not f["pass"]]
+    coverage_gap_findings: list[dict[str, Any]] = []
+    for asset in assets:
+        aid = asset["asset_id"]
+        if aid in snap_asset_ids:
+            continue
+        coverage_gap_findings.append(
+            {
+                "rule_id": "CIS-COVERAGE",
+                "asset_id": aid,
+                "pass": False,
+                "outcome": "coverage_gap",
+                "status": "coverage_gap",
+                "severity": "medium",
+                "expected": "cis_snapshot_present",
+                "observed": "no_cis_snapshot",
+                "registration_state": asset.get("registration_state", "unregistered"),
+                "mutate_allowed": asset.get("mutate_allowed", False),
+                "remediation_attempted": False,
+            }
+        )
+    findings.extend(coverage_gap_findings)
+    tested = len(findings) - len(coverage_gap_findings)
+    failed = [f for f in findings if f["status"] == "fail"]
     return {
         "bot_id": "cis-drift-sentinel",
-        "tested": len(findings),
+        "tested": tested,
         "failed": len(failed),
+        "coverage_gaps": len(coverage_gap_findings),
+        "population": tested + len(coverage_gap_findings),
         "findings": findings,
         "skipped_unregistered": 0,
-        "notes": "Unregistered assets remain in the test population.",
+        "denominator": "tested + coverage_gaps; unregistered-with-snapshot remain in tested",
+        "remediation_attempted": False,
+        "notes": (
+            "Unregistered assets remain in the test population. "
+            "Discovered assets without a CIS snapshot are coverage_gap rows, "
+            "not silent omissions. No CIS drift is auto-remediated."
+        ),
     }
 
 
@@ -170,12 +280,17 @@ def cct_evidence_harvester(
     ccf: dict[str, Any],
     vault_payloads: dict[str, dict[str, Any]],
     integrity: dict[str, Any],
+    soc: dict[str, Any] | None = None,
+    aging: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     results = []
+    soc = soc or vault_payloads.get("soc-use-case-attestor")
+    aging = aging or vault_payloads.get("exception-aging")
     for control in ccf.get("controls", []):
         cid = control["ccf_id"]
         bot = control["test_bot"]
         payload = vault_payloads.get(bot)
+        reason = None
         if cid == "CCF-AU-003":
             # 3LoD control — 2LoD does not attest independence
             results.append(
@@ -191,11 +306,20 @@ def cct_evidence_harvester(
             continue
         if cid == "CCF-CM-002":
             failed = payload.get("failed", 0)
-            outcome = "fail" if failed else "pass"
+            gaps = payload.get("coverage_gaps", 0)
+            if failed or gaps:
+                outcome = "fail"
+                reason = "cis_failed" if failed else "cis_coverage_gaps"
+                if failed and gaps:
+                    reason = "cis_failed,cis_coverage_gaps"
+            else:
+                outcome = "pass"
         elif cid in ("CCF-AC-001", "CCF-AC-006"):
             outcome = "fail" if payload.get("flagged", 0) else "pass"
         elif cid == "CCF-SI-002":
-            outcome = "fail" if payload.get("kev_open", 0) or payload.get("coverage_gaps", 0) else "pass"
+            judged = conclude_si002(payload, soc=soc, aging=aging)
+            outcome = judged["outcome"]
+            reason = judged["reason"]
         elif cid == "CCF-AM-001":
             outcome = "fail" if integrity.get("unregistered_count", 0) else "pass"
         elif cid == "CCF-SA-001":
@@ -205,16 +329,17 @@ def cct_evidence_harvester(
             outcome = "inconclusive" if any(d.get("status") == "draft" for d in drafts) else "pass"
         else:
             outcome = "inconclusive"
-        results.append(
-            {
-                "ccf_id": cid,
-                "title": control["title"],
-                "outcome": outcome,
-                "sox_in_scope": control.get("sox_in_scope"),
-                "evidence_bot": bot,
-                "close_allowed": False,
-            }
-        )
+        rec = {
+            "ccf_id": cid,
+            "title": control["title"],
+            "outcome": outcome,
+            "sox_in_scope": control.get("sox_in_scope"),
+            "evidence_bot": bot,
+            "close_allowed": False,
+        }
+        if reason:
+            rec["reason"] = reason
+        results.append(rec)
     return {
         "bot_id": "cct-evidence-harvester",
         "results": results,
@@ -238,16 +363,18 @@ def independent_sampler(
     for cid in sample_ids:
         two = by_ccf.get(cid, {})
         recomputed = two.get("outcome", "inconclusive")
-        # Re-perform CM from raw cis payload
+        # Re-perform CM from raw cis payload (drift + coverage_gaps)
         if cid == "CCF-CM-002":
             cis = vault_payloads.get("cis-drift-sentinel") or {}
-            recomputed = "fail" if cis.get("failed", 0) else "pass"
+            recomputed = "fail" if cis.get("failed", 0) or cis.get("coverage_gaps", 0) else "pass"
         if cid == "CCF-AC-006":
             iam = vault_payloads.get("iam-entitlement-auditor") or {}
             recomputed = "fail" if iam.get("flagged", 0) else "pass"
         if cid == "CCF-SI-002":
             patch = vault_payloads.get("patch-verify-bot") or {}
-            recomputed = "fail" if patch.get("kev_open", 0) or patch.get("coverage_gaps", 0) else "pass"
+            soc = vault_payloads.get("soc-use-case-attestor")
+            aging = vault_payloads.get("exception-aging")
+            recomputed = conclude_si002(patch, soc=soc, aging=aging)["outcome"]
         if cid == "CCF-AM-001":
             recomputed = two.get("outcome", "inconclusive")
         delta = recomputed != two.get("outcome")

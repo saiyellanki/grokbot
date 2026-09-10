@@ -30,6 +30,7 @@ Writes `poc/out/`:
 - `irm.json` / `hitl_queue.json` — issues; mutations blocked
 - `exception_aging.json` — risk-accept / exception tickets classified current / aging / breached
 - `soc_use_case_attestation.json` — privilege-host KEV use-cases; collectors ≠ detection
+- `cis_drift.json` — CIS snapshot tests plus coverage_gap rows for discovered assets without snapshots
 - `hitl_tokens.json` — dual-control token demo (reuse across tasks rejected)
 - `3lod_sample.json` / `examiner_pack.md`
 - `kpis.json` — **computed** from this run, labeled SYNTHETIC
@@ -63,18 +64,31 @@ Fixture: `poc/fixtures/exceptions.json`. As-of `2026-09-10T00:00:00Z`:
 
 Aged/breached tickets are appended to `hitl_queue.json`. No ticket is auto-closed.
 
+## CIS drift population
+
+`cis-drift-sentinel` outer-joins discovered inventory to `cis.json` snapshots:
+
+- Assets **with** snapshots stay in `tested` even when `registration_state` is unregistered (personal S3, sandbox EC2).
+- Discovered assets **without** a snapshot (Salesforce, Q2, Fiserv DNA, shadow `okta:app:quicknote-ai`) emit `status=coverage_gap` with the real registration state.
+- Denominator = `tested + coverage_gaps`. `skipped_unregistered` stays 0.
+- No CIS drift is auto-remediated (`remediation_attempted=false`). Coverage gaps queue HITL `cover_cis_snapshot`.
+
 ## SOC use-case library
 
-Fixture: `poc/fixtures/soc_use_cases.json` (privilege-host KEV / jump-host):
+Fixture: `poc/fixtures/soc_use_cases.json` (privilege-host KEV / jump-host). Aliases `UC-PH-00x` retained.
 
-| ID | Phase | MITRE (illustrative) |
-| --- | --- | --- |
-| UC-PH-001 | exploit | T1190, T1210 |
-| UC-PH-002 | post-exploit shell | T1059, T1021.001 |
-| UC-PH-003 | lateral-to-NPI | T1021, T1530 |
-| UC-PH-004 | KEV aging | T1190 |
+| ID | Phase | MITRE (illustrative) | Default attestation |
+| --- | --- | --- | --- |
+| UC-JUMP-KEV-01 | exploit | T1190, T1210 | gap |
+| UC-JUMP-KEV-02 | post-exploit shell | T1059, T1021.001 | gap |
+| UC-JUMP-KEV-03 | lateral-to-NPI | T1021, T1530 | partial |
+| UC-JUMP-KEV-04 | KEV aging | T1190 | partial |
 
-`collector_coverage` and `detection_attested_rate` are separate KPIs. A `kev_open` collector finding is not an attested detection use-case.
+`collector_coverage` and `soc_use_case_coverage_ratio` / `detection_attested_rate` are computed from the attestation artefact. A `kev_open` collector finding is not an attested detection use-case.
+
+Synthetic evidence: `poc/fixtures/soc_attestation_evidence.json`. Default `apply=false` so the PoC keeps `privilege_host_jump.attested_count=0`. Set `apply=true` on `EVD-JUMP-EXAMPLE` to demo one attested UC — that is still a fixture, not a live SIEM hit.
+
+`cct-evidence-harvester` will not mark `CCF-SI-002` as `pass` while `privilege_host_jump.attested_count==0`. A current/aging (not breached) SI-002 exception yields `inconclusive`; otherwise `fail` with `privilege_host_jump_unattested`. Unattested jump-host use-cases queue HITL `attest_soc_use_case`.
 
 ## Dual-control tokens
 
