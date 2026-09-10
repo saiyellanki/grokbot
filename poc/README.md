@@ -84,7 +84,7 @@ The in-memory broker consumes a token once and rejects reuse on a different `tas
 
 ## Grok / agent path
 
-Follow [playbooks/grok-e2e.md](playbooks/grok-e2e.md). The Python bots are the deterministic control plane; Grok plays HITL (1LoD/2LoD/CISO) and 3LoD narrative, and must not invent live-cloud remediations.
+Follow [playbooks/grok-e2e.md](playbooks/grok-e2e.md) for the mesh E2E. Use [playbooks/grok-masterbot-skill-auditor.md](playbooks/grok-masterbot-skill-auditor.md) when Grok should audit other skill bots against the golden-standard program and propose a draft improvement backlog (no remediations). The Python bots are the deterministic control plane; Grok plays HITL (1LoD/2LoD/CISO), 3LoD narrative, and skill-bot challenge — and must not invent live-cloud remediations.
 
 ## Guardrails
 
