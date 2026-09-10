@@ -103,24 +103,28 @@ class DualControlBroker:
         reuse_task: str,
         now: str,
     ) -> dict[str, Any]:
-        """Issue-path helper: first consume succeeds; cross-task reuse is rejected."""
-        first: dict[str, Any]
-        reuse: dict[str, Any]
+        """Show bind-check (wrong task) then one-time consume (replay rejected)."""
+        try:
+            self.consume(token, task_id=reuse_task, now=now)
+            cross = {"ok": True, "task_id": reuse_task, "rejected_reason": None}
+        except TokenError as exc:
+            cross = {"ok": False, "task_id": reuse_task, "rejected_reason": str(exc)}
         try:
             first = self.consume(token, task_id=bound_ok_task, now=now)
         except TokenError as exc:
             first = {"ok": False, "task_id": bound_ok_task, "rejected_reason": str(exc)}
         try:
             self.consume(token, task_id=reuse_task, now=now)
-            reuse = {"ok": True, "task_id": reuse_task, "rejected_reason": None}
+            replay = {"ok": True, "task_id": reuse_task, "rejected_reason": None}
         except TokenError as exc:
-            reuse = {"ok": False, "task_id": reuse_task, "rejected_reason": str(exc)}
+            replay = {"ok": False, "task_id": reuse_task, "rejected_reason": str(exc)}
         return {
             "synthetic": True,
             "schema": list(TOKEN_FIELDS),
             "broker_rule": "Reject tokens reused across tasks; one consume per token_id.",
             "issued": token,
+            "reuse_across_tasks": cross,
             "consume_bound_task": first,
-            "reuse_across_tasks": reuse,
+            "reuse_after_consume": replay,
             "notes": "Phase 2: tokens are recorded only. Broker does not mutate prod.",
         }
