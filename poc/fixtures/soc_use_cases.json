@@ -1,0 +1,68 @@
+{
+  "synthetic": true,
+  "library_id": "soc-uc-priv-host-kev-2026.09",
+  "as_of": "2026-09-10T00:00:00Z",
+  "thesis": "Collectors prove exposure. Detection use-cases prove the SOC would see exploit, post-exploit shell, and lateral movement toward NPI. They are not the same control.",
+  "use_cases": [
+    {
+      "use_case_id": "UC-PH-001",
+      "title": "Privilege-host KEV exploitation",
+      "phase": "exploit",
+      "asset_class": "jump_host",
+      "example_asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "mitre": ["T1190", "T1210"],
+      "controls": ["CCF-SI-002"],
+      "collector_ids": ["patch-verify-bot"],
+      "detection": {
+        "rule_id": null,
+        "attestation": "gap",
+        "notes": "patch-verify-bot inventories CVE-2024-0001 as kev_open. No SIEM rule attests an exploit attempt on rhb-az-jump-01."
+      }
+    },
+    {
+      "use_case_id": "UC-PH-002",
+      "title": "Post-exploit interactive shell on jump host",
+      "phase": "post-exploit",
+      "asset_class": "jump_host",
+      "example_asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "mitre": ["T1059", "T1059.001", "T1021.001"],
+      "controls": ["CCF-CM-002", "CCF-AU-003"],
+      "collector_ids": ["cis-drift-sentinel"],
+      "detection": {
+        "rule_id": null,
+        "attestation": "gap",
+        "notes": "CIS snapshot exists for disk encryption drift. That is not a detection of a post-exploit shell."
+      }
+    },
+    {
+      "use_case_id": "UC-PH-003",
+      "title": "Lateral movement from jump host to NPI store",
+      "phase": "lateral-to-npi",
+      "asset_class": "jump_host",
+      "example_asset_id": "arn:aws:s3:::rhb-prod-statements",
+      "mitre": ["T1021", "T1530"],
+      "controls": ["CCF-AC-001", "CCF-AC-006", "CCF-AM-001"],
+      "collector_ids": ["iam-entitlement-auditor", "cis-drift-sentinel"],
+      "detection": {
+        "rule_id": "det-jump-to-npi-partial",
+        "attestation": "partial",
+        "notes": "IAM graph and S3 CIS exist. No flow/EID correlation from rhb-az-jump-01 to rhb-prod-statements is attested."
+      }
+    },
+    {
+      "use_case_id": "UC-PH-004",
+      "title": "KEV aging past SLA on privilege path",
+      "phase": "kev-aging",
+      "asset_class": "jump_host",
+      "example_asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "mitre": ["T1190"],
+      "controls": ["CCF-SI-002"],
+      "collector_ids": ["patch-verify-bot"],
+      "detection": {
+        "rule_id": "det-kev-aging-ticket",
+        "attestation": "partial",
+        "notes": "patch-verify-bot flags kev_open. No SOC aging alert distinct from the vuln ticket is attested."
+      }
+    }
+  ]
+}

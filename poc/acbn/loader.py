@@ -32,4 +32,6 @@ def load_all() -> dict[str, Any]:
         "reg_feed": load("reg_feed.json"),
         "ccf": load("ccf.json"),
         "tasks": load("tasks.json"),
+        "exceptions": load("exceptions.json"),
+        "soc_use_cases": load("soc_use_cases.json"),
     }
