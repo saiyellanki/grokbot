@@ -1,0 +1,12 @@
+{
+  "synthetic": true,
+  "disclaimer": "Local watchlist for PoC only. Not the US Treasury SDN list.",
+  "entries": [
+    {
+      "sdn_id": "SYN-SDN-0001",
+      "name": "SANCTIONED_DUMMY_VENDOR_LLC",
+      "program": "SYNTHETIC-DEMO",
+      "listed": "2025-01-15"
+    }
+  ]
+}

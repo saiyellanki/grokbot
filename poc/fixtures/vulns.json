@@ -1,0 +1,46 @@
+{
+  "synthetic": true,
+  "as_of": "2026-09-09T12:00:00Z",
+  "findings": [
+    {
+      "finding_id": "VULN-001",
+      "asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "cve": "CVE-2024-0001",
+      "kev": true,
+      "severity": "critical",
+      "agent_last_seen_hours": 4,
+      "patched": false,
+      "notes": "Synthetic KEV on prod jump host adjacent to NPI admin path."
+    },
+    {
+      "finding_id": "VULN-002",
+      "asset_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0aaa1111",
+      "cve": "CVE-2023-9999",
+      "kev": false,
+      "severity": "medium",
+      "agent_last_seen_hours": 8,
+      "patched": true
+    },
+    {
+      "finding_id": "VULN-003",
+      "asset_id": "arn:aws:ec2:us-east-1:444455556666:instance/i-0sandbox99",
+      "cve": null,
+      "kev": false,
+      "severity": "unknown",
+      "agent_last_seen_hours": null,
+      "patched": false,
+      "notes": "No agent. Coverage gap, not patched."
+    },
+    {
+      "finding_id": "VULN-004",
+      "asset_id": "q2:tenant-rhb-demo",
+      "cve": null,
+      "kev": false,
+      "severity": "info",
+      "agent_last_seen_hours": null,
+      "patched": null,
+      "vendor_attestation": "Q2 patch attestation 2026-08-01 (SYNTHETIC)",
+      "notes": "Agentless SaaS. Independent scan limited to SSO and jump path."
+    }
+  ]
+}

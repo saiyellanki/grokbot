@@ -1,0 +1,60 @@
+{
+  "synthetic": true,
+  "baseline_id": "cis-aws-2.0-rhb-2026.09",
+  "as_of": "2026-09-09T12:00:00Z",
+  "snapshots": [
+    {
+      "asset_id": "arn:aws:s3:::rhb-prod-statements",
+      "rule_id": "CIS-2.1.1",
+      "expected": "public_access_block=true",
+      "observed": "public_access_block=true",
+      "pass": true
+    },
+    {
+      "asset_id": "arn:aws:s3:::rhb-prod-statements",
+      "rule_id": "CIS-2.1.2",
+      "expected": "encryption=AES256_or_KMS",
+      "observed": "encryption=aws:kms",
+      "pass": true
+    },
+    {
+      "asset_id": "arn:aws:s3:::rhb-personal-website-poc",
+      "rule_id": "CIS-2.1.1",
+      "expected": "public_access_block=true",
+      "observed": "public_access_block=false static_website=true",
+      "pass": false,
+      "severity": "critical"
+    },
+    {
+      "asset_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0aaa1111",
+      "rule_id": "CIS-4.3",
+      "expected": "ssh_from_approved_cidrs_only",
+      "observed": "ssh_from_approved_cidrs_only",
+      "pass": true
+    },
+    {
+      "asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "rule_id": "CIS-AZ-7.4",
+      "expected": "disk_encryption=cmk",
+      "observed": "disk_encryption=pmk",
+      "pass": false,
+      "severity": "medium"
+    },
+    {
+      "asset_id": "arn:aws:ec2:us-east-1:444455556666:instance/i-0sandbox99",
+      "rule_id": "CIS-4.1",
+      "expected": "no_0.0.0.0/0_admin",
+      "observed": "sg-open-22-0.0.0.0/0",
+      "pass": false,
+      "severity": "high"
+    },
+    {
+      "asset_id": "snowflake://RHDEMO/ANALYTICS",
+      "rule_id": "CIS-SNOW-2.1",
+      "expected": "network_policy_set",
+      "observed": "network_policy_set=false",
+      "pass": false,
+      "severity": "high"
+    }
+  ]
+}

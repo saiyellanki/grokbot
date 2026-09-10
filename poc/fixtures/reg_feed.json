@@ -1,0 +1,30 @@
+{
+  "synthetic": true,
+  "items": [
+    {
+      "item_id": "FIL-99-2026",
+      "source": "FDIC FIL (SYNTHETIC)",
+      "title": "Third-party AI copilots and customer NPI in SaaS tenants",
+      "published": "2026-08-18",
+      "url": "https://example.invalid/fil-99-2026",
+      "obligations": [
+        "Inventory SaaS AI with access to NPI",
+        "Enforce training opt-out and tenant isolation",
+        "Document model-risk-style monitoring for AI-assisted decisions"
+      ],
+      "time_to_enforcement_days": 90
+    },
+    {
+      "item_id": "FFIEC-IS-2026-UPD",
+      "source": "FFIEC Information Security Handbook update (SYNTHETIC)",
+      "title": "Configuration management evidence must come from live telemetry",
+      "published": "2026-07-02",
+      "url": "https://example.invalid/ffiec-is-2026-upd",
+      "obligations": [
+        "Configuration baselines attested from Config/Policy APIs",
+        "Unregistered cloud objects remain in the exam population"
+      ],
+      "time_to_enforcement_days": 180
+    }
+  ]
+}

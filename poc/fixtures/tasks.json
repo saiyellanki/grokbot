@@ -1,0 +1,82 @@
+{
+  "synthetic": true,
+  "tasks": [
+    {
+      "task_id": "task-cis-001",
+      "bot_id": "cis-drift-sentinel",
+      "line": "1LOD",
+      "priority": "P2",
+      "trigger": { "type": "cron", "cron": "0 2 * * *" },
+      "scope": { "env": ["prod", "sandbox"], "platforms": ["aws", "azure", "snowflake"], "include_unregistered": true },
+      "controls": ["CCF-CM-002", "NIST.CM-6"],
+      "hitl": { "required": false, "reasons": [] },
+      "fallback": { "on_missing_cmdb": "enrich_and_quarantine_class", "min_confidence": 0.55 }
+    },
+    {
+      "task_id": "task-iam-001",
+      "bot_id": "iam-entitlement-auditor",
+      "line": "1LOD",
+      "priority": "P2",
+      "trigger": { "type": "cron", "cron": "0 6 * * 1" },
+      "scope": { "env": ["prod"], "platforms": ["aws", "azure", "snowflake", "okta", "q2"], "include_unregistered": true },
+      "controls": ["CCF-AC-001", "CCF-AC-006"],
+      "hitl": { "required": true, "reasons": ["sox_in_scope=true"] },
+      "fallback": { "on_missing_cmdb": "enrich_and_quarantine_class", "min_confidence": 0.55 }
+    },
+    {
+      "task_id": "task-patch-001",
+      "bot_id": "patch-verify-bot",
+      "line": "1LOD",
+      "priority": "P1",
+      "trigger": { "type": "cron", "cron": "0 4 * * *" },
+      "scope": { "env": ["prod", "sandbox"], "platforms": ["aws", "azure", "q2"], "include_unregistered": true },
+      "controls": ["CCF-SI-002"],
+      "hitl": { "required": true, "reasons": ["kev_possible=true"] },
+      "fallback": { "on_missing_cmdb": "enrich_and_quarantine_class", "min_confidence": 0.55 }
+    },
+    {
+      "task_id": "task-reg-001",
+      "bot_id": "reg-change-mapper",
+      "line": "2LOD",
+      "priority": "P2",
+      "trigger": { "type": "event", "event_pattern": "reg-feed" },
+      "scope": { "env": ["prod"], "platforms": [], "include_unregistered": true },
+      "controls": ["CCF-RM-001"],
+      "hitl": { "required": true, "reasons": ["llm_mapping_draft=true"] },
+      "fallback": { "on_missing_cmdb": "skip_with_finding", "min_confidence": 0.0 }
+    },
+    {
+      "task_id": "task-cct-001",
+      "bot_id": "cct-evidence-harvester",
+      "line": "2LOD",
+      "priority": "P2",
+      "trigger": { "type": "cron", "cron": "0 8 * * *" },
+      "scope": { "env": ["prod", "sandbox"], "platforms": [], "include_unregistered": true },
+      "controls": ["CCF-AC-001", "CCF-AC-006", "CCF-CM-002", "CCF-SI-002", "CCF-AM-001", "CCF-SA-001"],
+      "hitl": { "required": true, "reasons": ["sod_close=true"] },
+      "fallback": { "on_missing_cmdb": "enrich_and_quarantine_class", "min_confidence": 0.55 }
+    },
+    {
+      "task_id": "task-ofac-001",
+      "bot_id": "ofac-sanctions-screener",
+      "line": "2LOD",
+      "priority": "P1",
+      "trigger": { "type": "cron", "cron": "0 5 * * *" },
+      "scope": { "env": ["prod"], "platforms": [], "include_unregistered": true },
+      "controls": ["CCF-SA-001"],
+      "hitl": { "required": true, "reasons": ["ofac_hit"] },
+      "fallback": { "on_missing_cmdb": "enrich_and_quarantine_class", "min_confidence": 0.55 }
+    },
+    {
+      "task_id": "task-audit-001",
+      "bot_id": "independent-sampler",
+      "line": "3LOD",
+      "priority": "P2",
+      "trigger": { "type": "cron", "cron": "0 10 1 * *" },
+      "scope": { "env": ["prod"], "platforms": [], "include_unregistered": true },
+      "controls": ["CCF-AU-003"],
+      "hitl": { "required": false, "reasons": ["read_only"] },
+      "fallback": { "on_missing_cmdb": "skip_with_finding", "min_confidence": 0.0 }
+    }
+  ]
+}

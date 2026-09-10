@@ -1,0 +1,70 @@
+{
+  "synthetic": true,
+  "version": "ccf-2026.09.1",
+  "controls": [
+    {
+      "ccf_id": "CCF-AC-001",
+      "title": "Account lifecycle",
+      "framework_refs": ["NIST.AC-2", "NIST.IA-4", "SOX.ITGC.A.2", "PCI.7.2", "FFIEC.IS.ACCESS"],
+      "test_bot": "iam-entitlement-auditor",
+      "cadence": "weekly",
+      "sox_in_scope": true
+    },
+    {
+      "ccf_id": "CCF-AC-006",
+      "title": "Least privilege",
+      "framework_refs": ["NIST.AC-6", "PCI.7.2.1", "FFIEC.IS.LEAST_PRIVILEGE"],
+      "test_bot": "iam-entitlement-auditor",
+      "cadence": "weekly",
+      "sox_in_scope": true
+    },
+    {
+      "ccf_id": "CCF-CM-002",
+      "title": "Secure baseline",
+      "framework_refs": ["NIST.CM-2", "NIST.CM-6", "PCI.2.2", "FFIEC.IS.CONFIG"],
+      "test_bot": "cis-drift-sentinel",
+      "cadence": "daily",
+      "sox_in_scope": true
+    },
+    {
+      "ccf_id": "CCF-SI-002",
+      "title": "Patch management",
+      "framework_refs": ["NIST.SI-2", "NIST.RA-5", "PCI.6.3", "FFIEC.OPS.PATCH"],
+      "test_bot": "patch-verify-bot",
+      "cadence": "daily",
+      "sox_in_scope": true
+    },
+    {
+      "ccf_id": "CCF-AM-001",
+      "title": "Asset inventory",
+      "framework_refs": ["NIST.CM-8", "CSF.ID.AM-01", "PCI.12.5.1"],
+      "test_bot": "discovery",
+      "cadence": "daily",
+      "sox_in_scope": true
+    },
+    {
+      "ccf_id": "CCF-RM-001",
+      "title": "Regulatory inventory",
+      "framework_refs": ["NIST.PM-30", "CSF.GV.OC", "OFAC.PROGRAM"],
+      "test_bot": "reg-change-mapper",
+      "cadence": "weekly",
+      "sox_in_scope": false
+    },
+    {
+      "ccf_id": "CCF-SA-001",
+      "title": "Sanctions screening",
+      "framework_refs": ["OFAC.SDN", "BSA.SANCTIONS"],
+      "test_bot": "ofac-sanctions-screener",
+      "cadence": "daily",
+      "sox_in_scope": false
+    },
+    {
+      "ccf_id": "CCF-AU-003",
+      "title": "Evidence integrity",
+      "framework_refs": ["NIST.AU-9", "PCI.10.3", "FFIEC.AUDIT"],
+      "test_bot": "independent-sampler",
+      "cadence": "monthly",
+      "sox_in_scope": true
+    }
+  ]
+}

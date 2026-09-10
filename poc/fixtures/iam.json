@@ -1,0 +1,85 @@
+{
+  "synthetic": true,
+  "as_of": "2026-09-09T12:00:00Z",
+  "principals": [
+    {
+      "principal_id": "arn:aws:iam::111122223333:user/svc-statements-etl",
+      "type": "iam_user",
+      "platform": "aws",
+      "hr_id": "HR-2044",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "entitlements": ["s3:GetObject", "s3:PutObject"],
+      "last_used_days_ago": 3,
+      "standing_admin": false,
+      "sod_clash": false
+    },
+    {
+      "principal_id": "arn:aws:iam::111122223333:user/jhale-admin",
+      "type": "iam_user",
+      "platform": "aws",
+      "hr_id": "HR-2044",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "entitlements": ["AdministratorAccess", "prod-deploy", "change-approve"],
+      "last_used_days_ago": 1,
+      "standing_admin": true,
+      "sod_clash": true,
+      "notes": "Standing admin plus deploy plus approve — SoD clash. SYNTHETIC."
+    },
+    {
+      "principal_id": "arn:aws:iam::111122223333:user/contractor-lee",
+      "type": "iam_user",
+      "platform": "aws",
+      "hr_id": null,
+      "owner": null,
+      "entitlements": ["s3:*"],
+      "last_used_days_ago": 140,
+      "standing_admin": false,
+      "sod_clash": false,
+      "notes": "Orphaned contractor. No HR match. Unused 140 days."
+    },
+    {
+      "principal_id": "snowflake:ANALYTICS.ROLE.ETL_READ",
+      "type": "grant",
+      "platform": "snowflake",
+      "hr_id": "HR-3102",
+      "owner": "priya.nair@ridgeline-demo.example",
+      "entitlements": ["SELECT ON ANALYTICS.*"],
+      "last_used_days_ago": 110,
+      "standing_admin": false,
+      "sod_clash": false
+    },
+    {
+      "principal_id": "entra:alex.rivera@ridgeline-demo.example",
+      "type": "entra_user",
+      "platform": "azure",
+      "hr_id": "HR-1188",
+      "owner": "alex.rivera@ridgeline-demo.example",
+      "entitlements": ["Global Administrator"],
+      "last_used_days_ago": 2,
+      "standing_admin": true,
+      "sod_clash": false
+    },
+    {
+      "principal_id": "okta:app:quicknote-ai:user/alex.rivera",
+      "type": "sso_assignment",
+      "platform": "okta",
+      "hr_id": "HR-1188",
+      "owner": "alex.rivera@ridgeline-demo.example",
+      "entitlements": ["QuickNote AI member"],
+      "last_used_days_ago": 4,
+      "standing_admin": false,
+      "sod_clash": false
+    },
+    {
+      "principal_id": "q2:group/privileged-ops",
+      "type": "q2_group",
+      "platform": "q2",
+      "hr_id": "HR-2044",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "entitlements": ["q2:admin"],
+      "last_used_days_ago": 7,
+      "standing_admin": true,
+      "sod_clash": false
+    }
+  ]
+}
