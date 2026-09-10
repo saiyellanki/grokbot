@@ -1,0 +1,44 @@
+{
+  "synthetic": true,
+  "disclaimer": "All names, charters, systems, and telemetry are fictitious. Not a real financial institution.",
+  "org_id": "lhb-poc-0001",
+  "legal_name": "Ridgeline Demo Bank, N.A.",
+  "aka": "Ridgeline Demo Bank (SYNTHETIC)",
+  "charter": "OCC-SYN-99999",
+  "hq": { "city": "Austin", "state": "TX", "country": "US" },
+  "poc_seed": 20260909,
+  "phase": 2,
+  "autonomy_grants": [],
+  "lines_of_defense": {
+    "1lod": {
+      "name": "Technology Operations & Cybersecurity",
+      "lead": { "name": "Jordan Hale", "title": "VP Cloud & IAM Operations", "email": "jordan.hale@ridgeline-demo.example" }
+    },
+    "2lod": {
+      "name": "Cyber Risk & Compliance",
+      "lead": { "name": "Priya Nair", "title": "Director Cyber Risk", "email": "priya.nair@ridgeline-demo.example" }
+    },
+    "3lod": {
+      "name": "Internal Audit",
+      "lead": { "name": "Morgan Ellis", "title": "IT Audit Senior Manager", "email": "morgan.ellis@ridgeline-demo.example" }
+    }
+  },
+  "ciso": { "name": "Dana Okonkwo", "email": "dana.okonkwo@ridgeline-demo.example" },
+  "platforms": [
+    { "id": "aws", "label": "AWS Organizations", "account_org": "o-rhbdemo", "notes": "3 accounts: prod, sandbox, log-archive" },
+    { "id": "azure", "label": "Azure / Entra", "tenant_id": "aaaa1111-bbbb-cccc-dddd-eeee22223333" },
+    { "id": "snowflake", "label": "Snowflake", "account": "RHDEMO-US-EAST" },
+    { "id": "salesforce", "label": "Salesforce", "org_id": "00DDEMO0000001" },
+    { "id": "q2", "label": "Q2 digital banking", "api": "none", "ingest": "sso_groups_plus_vendor_extract" },
+    { "id": "fiserv", "label": "Fiserv DNA core", "api": "none", "ingest": "sftp_nightly_extract" }
+  ],
+  "service_accounts": [
+    { "bot_id": "cis-drift-sentinel", "line": "1LOD", "principal": "role/acbn-cis-reader" },
+    { "bot_id": "iam-entitlement-auditor", "line": "1LOD", "principal": "role/acbn-iam-auditor" },
+    { "bot_id": "patch-verify-bot", "line": "1LOD", "principal": "role/acbn-patch-reader" },
+    { "bot_id": "reg-change-mapper", "line": "2LOD", "principal": "role/acbn-reg-mapper" },
+    { "bot_id": "cct-evidence-harvester", "line": "2LOD", "principal": "role/acbn-cct" },
+    { "bot_id": "ofac-sanctions-screener", "line": "2LOD", "principal": "role/acbn-ofac" },
+    { "bot_id": "independent-sampler", "line": "3LOD", "principal": "role/acbn-audit-reader", "deny": ["action-broker:*"] }
+  ]
+}

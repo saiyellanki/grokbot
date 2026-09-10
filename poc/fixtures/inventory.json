@@ -1,0 +1,103 @@
+{
+  "synthetic": true,
+  "as_of": "2026-09-09T12:00:00Z",
+  "resources": [
+    {
+      "asset_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0aaa1111",
+      "ci_id": "CI-1001",
+      "name": "rhb-prod-app-01",
+      "platform": "aws",
+      "env": "prod",
+      "type": "ec2",
+      "account": "111122223333",
+      "tags": { "Owner": "jordan.hale", "Env": "prod", "sox": "true" }
+    },
+    {
+      "asset_id": "arn:aws:s3:::rhb-prod-statements",
+      "ci_id": "CI-1002",
+      "name": "rhb-prod-s3-statements",
+      "platform": "aws",
+      "env": "prod",
+      "type": "s3",
+      "account": "111122223333",
+      "tags": { "Owner": "jordan.hale", "Env": "prod", "sox": "true" }
+    },
+    {
+      "asset_id": "arn:aws:s3:::rhb-personal-website-poc",
+      "ci_id": null,
+      "name": "rhb-personal-website-poc",
+      "platform": "aws",
+      "env": "unknown",
+      "type": "s3",
+      "account": "999900001111",
+      "tags": {},
+      "notes": "Unregistered personal-looking bucket reachable from corp SSO path. Dummy static site. SYNTHETIC."
+    },
+    {
+      "asset_id": "azure:/subscriptions/sub-rhb-prod/vm/rhb-az-jump-01",
+      "ci_id": "CI-1003",
+      "name": "rhb-az-jump-01",
+      "platform": "azure",
+      "env": "prod",
+      "type": "vm",
+      "tags": { "Owner": "jordan.hale", "Env": "prod" }
+    },
+    {
+      "asset_id": "snowflake://RHDEMO/ANALYTICS",
+      "ci_id": "CI-1004",
+      "name": "ANALYTICS",
+      "platform": "snowflake",
+      "env": "prod",
+      "type": "snowflake_db",
+      "tags": { "Env": "prod" }
+    },
+    {
+      "asset_id": "salesforce:00DDEMO0000001",
+      "ci_id": "CI-1005",
+      "name": "Salesforce Production",
+      "platform": "salesforce",
+      "env": "prod",
+      "type": "saas",
+      "tags": { "Owner": "priya.nair", "Env": "prod" }
+    },
+    {
+      "asset_id": "q2:tenant-rhb-demo",
+      "ci_id": "CI-1006",
+      "name": "Q2 digital banking",
+      "platform": "q2",
+      "env": "prod",
+      "type": "saas",
+      "tags": { "Owner": "jordan.hale" }
+    },
+    {
+      "asset_id": "fiserv:dna-rhb-demo",
+      "ci_id": "CI-1007",
+      "name": "Fiserv DNA core",
+      "platform": "fiserv",
+      "env": "prod",
+      "type": "core_banking",
+      "tags": { "Owner": "jordan.hale" }
+    },
+    {
+      "asset_id": "okta:app:quicknote-ai",
+      "ci_id": null,
+      "name": "QuickNote AI",
+      "platform": "okta",
+      "env": "unknown",
+      "type": "shadow_saas",
+      "tags": {},
+      "notes": "SSO-visible app with no vendor record. SYNTHETIC shadow IT."
+    },
+    {
+      "asset_id": "arn:aws:ec2:us-east-1:444455556666:instance/i-0sandbox99",
+      "ci_id": null,
+      "name": "rhb-sandbox-unmanaged-01",
+      "platform": "aws",
+      "env": "sandbox",
+      "type": "ec2",
+      "account": "444455556666",
+      "tags": { "Name": "tmp-dev" },
+      "notes": "Sandbox instance with no CMDB CI."
+    }
+  ]
+}

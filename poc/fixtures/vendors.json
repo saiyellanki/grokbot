@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "as_of": "2026-09-09T12:00:00Z",
+  "vendors": [
+    {
+      "vendor_id": "V-01",
+      "name": "Nimbus Payments LLC",
+      "legal_name": "Nimbus Payments LLC",
+      "ofac_name": "NIMBUS PAYMENTS LLC",
+      "data_access": "card_processor",
+      "criticality": "high",
+      "questionnaire": "caiq_complete"
+    },
+    {
+      "vendor_id": "V-02",
+      "name": "QuickNote AI",
+      "legal_name": "QuickNote Analytics Inc",
+      "ofac_name": "QUICKNOTE ANALYTICS INC",
+      "data_access": "unknown_shadow",
+      "criticality": "unknown",
+      "questionnaire": "none"
+    },
+    {
+      "vendor_id": "V-03",
+      "name": "Harborline Facilities",
+      "legal_name": "SANCTIONED_DUMMY_VENDOR_LLC",
+      "ofac_name": "SANCTIONED_DUMMY_VENDOR_LLC",
+      "data_access": "facilities_badge",
+      "criticality": "low",
+      "questionnaire": "expired",
+      "notes": "Name is a synthetic SDN match for PoC. Not a real sanctions target."
+    },
+    {
+      "vendor_id": "V-04",
+      "name": "Fiserv DNA (licensed)",
+      "legal_name": "Fiserv Demo Licensee",
+      "ofac_name": "FISERV DEMO LICENSEE",
+      "data_access": "core_banking",
+      "criticality": "critical",
+      "questionnaire": "caiq_complete"
+    }
+  ]
+}

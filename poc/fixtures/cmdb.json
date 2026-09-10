@@ -1,0 +1,84 @@
+{
+  "synthetic": true,
+  "system": "ServiceNow CMDB (incomplete by design)",
+  "as_of": "2026-09-09T12:00:00Z",
+  "cis": [
+    {
+      "ci_id": "CI-1001",
+      "name": "rhb-prod-app-01",
+      "type": "ec2",
+      "platform": "aws",
+      "env": "prod",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    },
+    {
+      "ci_id": "CI-1002",
+      "name": "rhb-prod-s3-statements",
+      "type": "s3",
+      "platform": "aws",
+      "env": "prod",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    },
+    {
+      "ci_id": "CI-1003",
+      "name": "rhb-az-jump-01",
+      "type": "vm",
+      "platform": "azure",
+      "env": "prod",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    },
+    {
+      "ci_id": "CI-1004",
+      "name": "RHDEMO warehouse ANALYTICS",
+      "type": "snowflake_db",
+      "platform": "snowflake",
+      "env": "prod",
+      "owner": "priya.nair@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": false
+    },
+    {
+      "ci_id": "CI-1005",
+      "name": "Salesforce Production",
+      "type": "saas",
+      "platform": "salesforce",
+      "env": "prod",
+      "owner": "priya.nair@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    },
+    {
+      "ci_id": "CI-1006",
+      "name": "Q2 digital banking",
+      "type": "saas",
+      "platform": "q2",
+      "env": "prod",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    },
+    {
+      "ci_id": "CI-1007",
+      "name": "Fiserv DNA core",
+      "type": "core_banking",
+      "platform": "fiserv",
+      "env": "prod",
+      "owner": "jordan.hale@ridgeline-demo.example",
+      "data_class": "npi",
+      "sox_in_scope": true,
+      "tags_complete": true
+    }
+  ]
+}

@@ -1,14 +1,16 @@
 # Scratchpad
 
 ## Current task
-Learn Sai from public profiles + career journal before real grokbot work.
+PoC the ACBN framework end-to-end with synthetic tenant data and grok-operable bots.
 
-[X] Portfolio site (sai-agent)
-[X] GitHub (saiyellanki)
-[X] Older June 2026 Professional Career Journal (superseded)
-[X] Exact file: ~/Downloads/Sai_Yellanki_Career_Journal.pdf (2026-09-09, confidential)
-[X] Updated `.cursor/rules/sai-profile.mdc` with public-vs-confidential rules
+[X] Fixtures for Ridgeline Demo Bank (SYNTHETIC)
+[X] Python orchestrator: discovery, 6 bots, vault hash-chain, HITL, 3LoD sample
+[X] Grok playbooks
+[X] Run E2E and surface measured KPIs (not invented)
 
 ## Lessons
-- The named Career Journal is the source of truth. Older drafts name employers and use internal metrics.
-- Public materials must not name current employer, prior consulting firm, 700+ agents, board approval, SR 11-7/OCC, or FFIEC.
+- Named Career Journal is source of truth for Sai's public-vs-confidential wording.
+- For this *generic* framework spec, FFIEC/CRI/FINRA/FDIC are requested regulatory baselines, not claims about his employer.
+- KPI section must use formulas and labeled planning bands, not fabricated "hours saved" results.
+- PoC metrics must be computed from fixture runs and labeled SYNTHETIC.
+- Canvas Pill cannot take React `key` in this SDK — unroll or wrap in span.
