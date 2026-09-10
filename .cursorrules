@@ -6,8 +6,14 @@ Do NOT call live cloud/OFAC APIs. Do NOT auto-remediate. Keep remediation_attemp
 
 [X] IMP-001: cis-drift-sentinel outer-join discovered inventory; emit coverage_gap rows
 [X] IMP-002: Wire UC-JUMP-KEV attestation so CCT cannot pass SI-002 while privilege_host_jump attested_count==0
-[ ] Run python3 poc/run_poc.py; verify artefacts
-[ ] Commit, push, open PR off cursor/acbn-synthetic-poc
+[X] Run python3 poc/run_poc.py; verify artefacts
+[X] Commit, push, open PR off cursor/acbn-synthetic-poc
+
+## Measured (SYNTHETIC run after IMP-001/002)
+- cis tested=7 coverage_gaps=4 population=11; okta:app:quicknote-ai shadow+coverage_gap
+- soc_use_case_coverage_ratio=0.0; privilege_host_jump attested_count=0
+- CCF-SI-002 fail: kev_open,patch_coverage_gaps,privilege_host_jump_unattested,soc_use_case_gaps
+- PR: https://github.com/saiyellanki/grokbot/pull/3
 
 ## Plan
 1. Read cis-drift-sentinel in bots.py + cis.json + inventory fixtures
