@@ -1,22 +1,27 @@
 # Scratchpad
 
 ## Current task
-Improve ACBN synthetic PoC for examiner-ready continuous controls monitoring.
+Two draft-only skill-auditor improvements for ACBN synthetic PoC (IMP-001 / IMP-002).
+Do NOT call live cloud/OFAC APIs. Do NOT auto-remediate. Keep remediation_attempted=false.
 
-[X] Vault event schema: policy_version, collector_id, control_ids, env
-[X] Exception aging module + fixture + HITL + out artefact
-[X] SOC use-case library (privilege-host KEV / jump-host) + attestation
-[X] Dual-control HITL token schema + reuse reject + sample out
-[X] Redaction policy stub (deny unredacted NPI/CHD)
-[X] Docs: README + grok-e2e pass criteria
-[X] run_poc.py exits 0; chain_ok; unauthorized_prod_mutations==0
-[X] Branch, commit, PR
+[X] IMP-001: cis-drift-sentinel outer-join discovered inventory; emit coverage_gap rows
+[X] IMP-002: Wire UC-JUMP-KEV attestation so CCT cannot pass SI-002 while privilege_host_jump attested_count==0
+[X] Run python3 poc/run_poc.py; verify artefacts
+[X] Commit, push, open PR off cursor/acbn-synthetic-poc
 
-## Measured (SYNTHETIC run 2026-09-10)
-- chain_ok true; unauthorized_prod_mutations 0
-- exception_breached 2 / aging 1 / HITL +3
-- soc_collector_coverage 1.0; detection_attested_rate 0.0
-- token_reuse_rejected true (token_reuse_across_tasks)
+## Measured (SYNTHETIC run after IMP-001/002)
+- cis tested=7 coverage_gaps=4 population=11; okta:app:quicknote-ai shadow+coverage_gap
+- soc_use_case_coverage_ratio=0.0; privilege_host_jump attested_count=0
+- CCF-SI-002 fail: kev_open,patch_coverage_gaps,privilege_host_jump_unattested,soc_use_case_gaps
+- PR: https://github.com/saiyellanki/grokbot/pull/3
+
+## Plan
+1. Read cis-drift-sentinel in bots.py + cis.json + inventory fixtures
+2. Outer-join discovered assets; coverage_gap for missing snapshots; keep unregistered-with-snap in population
+3. Read soc_use_cases.py + CCT / CCF-SI-002 harvest path
+4. Wire attestation so SI-002 fails/inconclusive when all privilege_host_jump UCs unattested
+5. Update notes/KPI helpers for denominator honesty
+6. Run PoC, verify artefacts, PR
 
 ## Lessons
 - Named Career Journal is source of truth for Sai's public-vs-confidential wording.
@@ -24,5 +29,5 @@ Improve ACBN synthetic PoC for examiner-ready continuous controls monitoring.
 - KPI section must use formulas and labeled planning bands, not fabricated "hours saved" results.
 - PoC metrics must be computed from fixture runs and labeled SYNTHETIC.
 - Canvas Pill cannot take React `key` in this SDK — unroll or wrap in span.
-- Cloud agent: feature branches must match `cursor/<descriptive-name>-96ac`; preferred base is `cursor/acbn-synthetic-poc`.
+- Cloud agent: feature branches must match `cursor/<descriptive-name>-af0b`; preferred base is `cursor/acbn-synthetic-poc`.
 - Dual-control demo should attempt the unbound task *before* consume so the artefact shows `token_reuse_across_tasks`, not only `token_already_consumed`.

@@ -40,7 +40,22 @@ def _hitl_items(bot_id: str, payload: dict[str, Any], assets: list[dict[str, Any
     items = []
     if bot_id == "cis-drift-sentinel":
         for f in payload.get("findings", []):
-            if f["pass"]:
+            status = f.get("status") or f.get("outcome")
+            if status == "coverage_gap":
+                items.append(
+                    {
+                        "bot_id": bot_id,
+                        "action": "cover_cis_snapshot",
+                        "asset_id": f["asset_id"],
+                        "blocked": True,
+                        "reasons": [
+                            "cis_coverage_gap",
+                            f"registration_state={f.get('registration_state')}",
+                        ],
+                    }
+                )
+                continue
+            if f.get("pass"):
                 continue
             if f["registration_state"] != "registered" or f.get("severity") in ("high", "critical"):
                 items.append(
@@ -100,6 +115,24 @@ def _hitl_items(bot_id: str, payload: dict[str, Any], assets: list[dict[str, Any
                     "reasons": ["mapping_draft", f"confidence={d['confidence']}"],
                 }
             )
+    if bot_id == "soc-use-case-attestor":
+        for uc in payload.get("use_cases", []):
+            if uc.get("asset_class") != "privilege_host_jump":
+                continue
+            if uc.get("detection_attestation") == "attested":
+                continue
+            items.append(
+                {
+                    "bot_id": bot_id,
+                    "action": "attest_soc_use_case",
+                    "use_case_id": uc["use_case_id"],
+                    "blocked": True,
+                    "reasons": [
+                        "privilege_host_jump_unattested",
+                        f"attestation={uc.get('detection_attestation')}",
+                    ],
+                }
+            )
     return items
 
 
@@ -111,6 +144,7 @@ def kpis(
     hitl: list[dict[str, Any]],
     aging: dict[str, Any] | None = None,
     soc: dict[str, Any] | None = None,
+    cis: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     in_scope = [r for r in cct.get("results", []) if r.get("outcome") != "not_tested_by_2lod"]
     complete = [r for r in in_scope if r["outcome"] in ("pass", "fail")]
@@ -141,7 +175,14 @@ def kpis(
         "exception_aging": (aging.get("counts") or {}).get("aging", 0),
         "soc_collector_coverage": soc_kpis.get("collector_coverage"),
         "soc_detection_attested_rate": soc_kpis.get("detection_attested_rate"),
+        "soc_use_case_coverage_ratio": soc_kpis.get("soc_use_case_coverage_ratio"),
+        "soc_privilege_host_jump_attested_count": (soc_kpis.get("privilege_host_jump") or {}).get(
+            "attested_count"
+        ),
         "soc_collectors_are_not_detections": soc_kpis.get("collectors_are_not_detections", True),
+        "cis_tested": (cis or {}).get("tested"),
+        "cis_coverage_gaps": (cis or {}).get("coverage_gaps"),
+        "cis_population": (cis or {}).get("population"),
     }
 
 
@@ -226,18 +267,6 @@ def run(out_dir: Path) -> dict[str, Any]:
     reg = bots.reg_change_mapper(data["reg_feed"], data["ccf"])
     _put(vault, bot_id="reg-change-mapper", line="2LOD", task_id="task-reg-001", payload=reg, controls=["CCF-RM-001"])
 
-    payloads = {
-        "discovery": disc_rec["payload"],
-        "cis-drift-sentinel": cis,
-        "iam-entitlement-auditor": iam,
-        "patch-verify-bot": patch,
-        "ofac-sanctions-screener": ofac,
-        "reg-change-mapper": reg,
-    }
-
-    cct = bots.cct_evidence_harvester(data["ccf"], payloads, integrity)
-    _put(vault, bot_id="cct-evidence-harvester", line="2LOD", task_id="task-cct-001", payload=cct, controls=["CCF-AC-001"])
-
     aging = age_exceptions(data["exceptions"])
     _put(
         vault,
@@ -248,10 +277,18 @@ def run(out_dir: Path) -> dict[str, Any]:
         controls=sorted({t["control_id"] for t in aging["tickets"] if t.get("control_id")}),
     )
 
-    available = {p.get("bot_id") for p in payloads.values() if isinstance(p, dict) and p.get("bot_id")}
+    available = {
+        p.get("bot_id")
+        for p in (cis, iam, patch, ofac, reg)
+        if isinstance(p, dict) and p.get("bot_id")
+    }
     available.add("discovery")
     available.add("patch-verify-bot")
-    soc = attest_library(data["soc_use_cases"], available_collectors=available)
+    soc = attest_library(
+        data["soc_use_cases"],
+        available_collectors=available,
+        evidence=data.get("soc_attestation_evidence"),
+    )
     _put(
         vault,
         bot_id="soc-use-case-attestor",
@@ -260,6 +297,20 @@ def run(out_dir: Path) -> dict[str, Any]:
         payload={"kpis": soc["kpis"], "use_cases": soc["use_cases"]},
         controls=["CCF-SI-002", "CCF-AU-003"],
     )
+
+    payloads = {
+        "discovery": disc_rec["payload"],
+        "cis-drift-sentinel": cis,
+        "iam-entitlement-auditor": iam,
+        "patch-verify-bot": patch,
+        "ofac-sanctions-screener": ofac,
+        "reg-change-mapper": reg,
+        "soc-use-case-attestor": soc,
+        "exception-aging": aging,
+    }
+
+    cct = bots.cct_evidence_harvester(data["ccf"], payloads, integrity, soc=soc, aging=aging)
+    _put(vault, bot_id="cct-evidence-harvester", line="2LOD", task_id="task-cct-001", payload=cct, controls=["CCF-AC-001"])
 
     chain_ok = vault.verify_chain()
     sampler = bots.independent_sampler(payloads, cct, chain_ok)
@@ -285,6 +336,7 @@ def run(out_dir: Path) -> dict[str, Any]:
         ("patch-verify-bot", patch),
         ("ofac-sanctions-screener", ofac),
         ("reg-change-mapper", reg),
+        ("soc-use-case-attestor", soc),
     ):
         hitl.extend(_hitl_items(bot_id, payload, assets))
     hitl.extend(aging.get("hitl_items") or [])
@@ -294,7 +346,7 @@ def run(out_dir: Path) -> dict[str, Any]:
         raise RuntimeError("dual-control broker accepted a reused token")
 
     vault.flush_manifest()
-    metrics = kpis(assets, integrity, cct, sampler, hitl, aging=aging, soc=soc)
+    metrics = kpis(assets, integrity, cct, sampler, hitl, aging=aging, soc=soc, cis=cis)
 
     irm = {
         "synthetic": True,
@@ -316,6 +368,7 @@ def run(out_dir: Path) -> dict[str, Any]:
     (out_dir / "3lod_sample.json").write_text(json.dumps(sampler, indent=2), encoding="utf-8")
     (out_dir / "exception_aging.json").write_text(json.dumps(aging, indent=2), encoding="utf-8")
     (out_dir / "soc_use_case_attestation.json").write_text(json.dumps(soc, indent=2), encoding="utf-8")
+    (out_dir / "cis_drift.json").write_text(json.dumps(cis, indent=2), encoding="utf-8")
     (out_dir / "hitl_tokens.json").write_text(json.dumps(token_demo, indent=2), encoding="utf-8")
 
     pack = examiner_pack(data["org"], metrics, sampler, chain_ok, aging=aging, soc=soc)
@@ -329,6 +382,7 @@ def run(out_dir: Path) -> dict[str, Any]:
         "hitl_count": len(hitl),
         "exception_hitl": (aging.get("counts") or {}).get("hitl_queued", 0),
         "soc_detection_attested_rate": metrics.get("soc_detection_attested_rate"),
+        "soc_use_case_coverage_ratio": metrics.get("soc_use_case_coverage_ratio"),
         "token_reuse_rejected": not token_demo.get("reuse_across_tasks", {}).get("ok", True),
         "out_dir": str(out_dir),
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -363,7 +417,9 @@ def examiner_pack(
         f"- Inconclusive rate: {metrics['inconclusive_rate']}",
         f"- HITL queued (blocked mutations): {metrics['hitl_queued']}",
         f"- Exception breached / aging: {metrics.get('exception_breached')} / {metrics.get('exception_aging')}",
-        f"- SOC collector coverage / detection attested: {metrics.get('soc_collector_coverage')} / {metrics.get('soc_detection_attested_rate')}",
+        f"- SOC collector coverage / detection attested / use-case coverage: {metrics.get('soc_collector_coverage')} / {metrics.get('soc_detection_attested_rate')} / {metrics.get('soc_use_case_coverage_ratio')}",
+        f"- Privilege-host jump attested_count: {metrics.get('soc_privilege_host_jump_attested_count')}",
+        f"- CIS tested / coverage_gaps / population: {metrics.get('cis_tested')} / {metrics.get('cis_coverage_gaps')} / {metrics.get('cis_population')}",
         f"- 3LoD independence delta: {metrics['independence_delta']}",
         "",
         "## 3LoD sample (seed 20260909)",
@@ -395,6 +451,7 @@ def examiner_pack(
         "## SOC use-case attestation (privilege-host KEV)",
         "",
         "Collectors ≠ detection. A KEV inventory finding is not an exploit or lateral-movement use-case.",
+        "Default PoC leaves UC-JUMP-KEV-01..04 unattested (gap/partial). CCF-SI-002 cannot pass while privilege_host_jump attested_count==0.",
         "",
     ]
     for uc in soc.get("use_cases") or []:
